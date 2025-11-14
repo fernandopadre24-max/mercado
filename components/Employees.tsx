@@ -5,9 +5,11 @@ import { ICONS } from '../constants';
 interface EmployeesProps {
   employees: Employee[];
   onAddEmployee: () => void;
+  onEditEmployee: (employee: Employee) => void;
+  onDeleteEmployee: (employeeId: string) => void;
 }
 
-const Employees: React.FC<EmployeesProps> = ({ employees, onAddEmployee }) => {
+const Employees: React.FC<EmployeesProps> = ({ employees, onAddEmployee, onEditEmployee, onDeleteEmployee }) => {
   return (
     <div className="p-8 bg-light-bg h-full overflow-y-auto">
       <div className="flex justify-between items-center mb-8">
@@ -30,6 +32,7 @@ const Employees: React.FC<EmployeesProps> = ({ employees, onAddEmployee }) => {
               <th className="px-5 py-3">Cargo</th>
               <th className="px-5 py-3">Contato</th>
               <th className="px-5 py-3">Email</th>
+              <th className="px-5 py-3 text-right">Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -53,6 +56,24 @@ const Employees: React.FC<EmployeesProps> = ({ employees, onAddEmployee }) => {
                 <td className="px-5 py-4 text-sm">
                    <p className="text-gray-900 whitespace-no-wrap">{employee.email}</p>
                 </td>
+                <td className="px-5 py-4 text-sm text-right">
+                    <div className="flex justify-end items-center space-x-2">
+                        <button
+                            onClick={() => onEditEmployee(employee)}
+                            className="text-indigo-600 hover:text-indigo-900 p-1"
+                            title="Editar Funcionário"
+                        >
+                            <span className="w-5 h-5">{ICONS.edit}</span>
+                        </button>
+                        <button
+                            onClick={() => onDeleteEmployee(employee.id)}
+                            className="text-red-600 hover:text-red-900 p-1"
+                            title="Excluir Funcionário"
+                        >
+                            <span className="w-5 h-5">{ICONS.trash}</span>
+                        </button>
+                    </div>
+                  </td>
               </tr>
             ))}
           </tbody>

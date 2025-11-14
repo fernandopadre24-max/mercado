@@ -5,9 +5,11 @@ import { Supplier } from '../types';
 interface SuppliersProps {
   suppliers: Supplier[];
   onAddSupplier: () => void;
+  onEditSupplier: (supplier: Supplier) => void;
+  onDeleteSupplier: (supplierId: string) => void;
 }
 
-const Suppliers: React.FC<SuppliersProps> = ({ suppliers, onAddSupplier }) => {
+const Suppliers: React.FC<SuppliersProps> = ({ suppliers, onAddSupplier, onEditSupplier, onDeleteSupplier }) => {
   return (
     <div className="p-8 bg-light-bg h-full overflow-y-auto">
       <div className="flex justify-between items-center mb-8">
@@ -30,6 +32,7 @@ const Suppliers: React.FC<SuppliersProps> = ({ suppliers, onAddSupplier }) => {
               <th className="px-5 py-3">CNPJ</th>
               <th className="px-5 py-3">Pessoa de Contato</th>
               <th className="px-5 py-3">Telefone</th>
+              <th className="px-5 py-3 text-right">Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -53,6 +56,24 @@ const Suppliers: React.FC<SuppliersProps> = ({ suppliers, onAddSupplier }) => {
                 <td className="px-5 py-4 text-sm">
                    <p className="text-gray-900 whitespace-no-wrap">{supplier.phone}</p>
                 </td>
+                <td className="px-5 py-4 text-sm text-right">
+                    <div className="flex justify-end items-center space-x-2">
+                        <button
+                            onClick={() => onEditSupplier(supplier)}
+                            className="text-indigo-600 hover:text-indigo-900 p-1"
+                            title="Editar Fornecedor"
+                        >
+                            <span className="w-5 h-5">{ICONS.edit}</span>
+                        </button>
+                        <button
+                            onClick={() => onDeleteSupplier(supplier.id)}
+                            className="text-red-600 hover:text-red-900 p-1"
+                            title="Excluir Fornecedor"
+                        >
+                            <span className="w-5 h-5">{ICONS.trash}</span>
+                        </button>
+                    </div>
+                  </td>
               </tr>
             ))}
           </tbody>

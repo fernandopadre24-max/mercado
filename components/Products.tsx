@@ -6,6 +6,7 @@ interface ProductsProps {
   products: Product[];
   onEditProduct: (product: Product) => void;
   onAddProduct: () => void;
+  onDeleteProduct: (productId: string) => void;
 }
 
 interface StatCardProps {
@@ -29,7 +30,7 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, subtitle, icon, color
   </div>
 );
 
-const Products: React.FC<ProductsProps> = ({ products, onEditProduct, onAddProduct }) => {
+const Products: React.FC<ProductsProps> = ({ products, onEditProduct, onAddProduct, onDeleteProduct }) => {
   const totalCostValue = products.reduce((sum, product) => sum + (product.costPrice * product.stock), 0);
   const totalSaleValue = products.reduce((sum, product) => sum + (product.salePrice * product.stock), 0);
   const totalItems = products.length;
@@ -93,6 +94,7 @@ const Products: React.FC<ProductsProps> = ({ products, onEditProduct, onAddProdu
               <th className="px-5 py-3 text-right">Preço de Venda</th>
               <th className="px-5 py-3 text-center">Estoque</th>
               <th className="px-5 py-3 text-center">Promoção</th>
+              <th className="px-5 py-3 text-right">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -101,8 +103,7 @@ const Products: React.FC<ProductsProps> = ({ products, onEditProduct, onAddProdu
               return (
                 <tr 
                   key={product.id} 
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
-                  onClick={() => onEditProduct(product)}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   <td className="px-5 py-4 text-sm">
                     <p className="text-gray-900 dark:text-gray-300 whitespace-no-wrap">{product.barcode}</p>
@@ -141,6 +142,24 @@ const Products: React.FC<ProductsProps> = ({ products, onEditProduct, onAddProdu
                       ) : (
                           <span className="text-gray-500 dark:text-gray-400">Não</span>
                       )}
+                  </td>
+                  <td className="px-5 py-4 text-sm text-right">
+                    <div className="flex justify-end items-center space-x-2">
+                        <button
+                            onClick={() => onEditProduct(product)}
+                            className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 p-1"
+                            title="Editar Produto"
+                        >
+                            <span className="w-5 h-5">{ICONS.edit}</span>
+                        </button>
+                        <button
+                            onClick={() => onDeleteProduct(product.id)}
+                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-1"
+                            title="Excluir Produto"
+                        >
+                            <span className="w-5 h-5">{ICONS.trash}</span>
+                        </button>
+                    </div>
                   </td>
                 </tr>
               )

@@ -13,12 +13,14 @@ import SalesHistory from './components/SalesHistory';
 import ProductEditModal from './components/ProductEditModal';
 import ProductAddModal from './components/ProductAddModal';
 import EmployeeAddModal from './components/EmployeeAddModal';
+import EmployeeEditModal from './components/EmployeeEditModal';
 import OperatorLoginModal from './components/OperatorLoginModal';
 import SellOnCreditModal from './components/SellOnCreditModal';
 import SellInInstallmentsModal from './components/SellInInstallmentsModal';
 import Settings from './components/Settings';
 import Suppliers from './components/Suppliers';
 import SupplierAddModal from './components/SupplierAddModal';
+import SupplierEditModal from './components/SupplierEditModal';
 import SangriaModal from './components/SangriaModal';
 import SuprimentoModal from './components/SuprimentoModal';
 import CashDrawerOpenModal from './components/CashDrawerOpenModal';
@@ -45,9 +47,11 @@ const App: React.FC = () => {
   
   const [employees, setEmployees] = useState<Employee[]>(MOCK_EMPLOYEES);
   const [isAddEmployeeModalOpen, setAddEmployeeModalOpen] = useState(false);
+  const [employeeToEdit, setEmployeeToEdit] = useState<Employee | null>(null);
   
   const [suppliers, setSuppliers] = useState<Supplier[]>(MOCK_SUPPLIERS);
   const [isAddSupplierModalOpen, setAddSupplierModalOpen] = useState(false);
+  const [supplierToEdit, setSupplierToEdit] = useState<Supplier | null>(null);
 
   const [isSuggestionsModalOpen, setSuggestionsModalOpen] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
@@ -394,6 +398,12 @@ const App: React.FC = () => {
       setProducts(prev => [...prev, newProduct].sort((a, b) => a.name.localeCompare(b.name)));
       setAddProductModalOpen(false);
   };
+
+  const handleDeleteProduct = (productId: string) => {
+    if (window.confirm('Tem certeza que deseja excluir este produto? Esta ação não pode ser desfeita.')) {
+        setProducts(prev => prev.filter(p => p.id !== productId));
+    }
+  };
   
   const handleAddEmployee = (newEmployeeData: Omit<Employee, 'id' | 'employeeId'>) => {
       const newEmployeeId = `EMP-${String(Date.now()).slice(-4)}`;
@@ -406,6 +416,21 @@ const App: React.FC = () => {
       setAddEmployeeModalOpen(false);
   };
 
+  const handleEditEmployee = (employee: Employee) => {
+    setEmployeeToEdit(employee);
+  };
+
+  const handleSaveEmployee = (updatedEmployee: Employee) => {
+    setEmployees(prev => prev.map(e => e.id === updatedEmployee.id ? updatedEmployee : e));
+    setEmployeeToEdit(null);
+  };
+
+  const handleDeleteEmployee = (employeeId: string) => {
+    if (window.confirm('Tem certeza que deseja excluir este funcionário?')) {
+        setEmployees(prev => prev.filter(e => e.id !== employeeId));
+    }
+  };
+
   const handleAddSupplier = (newSupplierData: Omit<Supplier, 'id'>) => {
     const newSupplier: Supplier = {
         id: `sup-${Date.now()}`,
@@ -413,6 +438,21 @@ const App: React.FC = () => {
     };
     setSuppliers(prev => [...prev, newSupplier].sort((a, b) => a.name.localeCompare(b.name)));
     setAddSupplierModalOpen(false);
+  };
+
+  const handleEditSupplier = (supplier: Supplier) => {
+    setSupplierToEdit(supplier);
+  };
+
+  const handleSaveSupplier = (updatedSupplier: Supplier) => {
+    setSuppliers(prev => prev.map(s => s.id === updatedSupplier.id ? updatedSupplier : s));
+    setSupplierToEdit(null);
+  };
+
+  const handleDeleteSupplier = (supplierId: string) => {
+    if (window.confirm('Tem certeza que deseja excluir este fornecedor?')) {
+        setSuppliers(prev => prev.filter(s => s.id !== supplierId));
+    }
   };
 
   const handleOperatorLogin = (operator: Employee) => {
@@ -680,11 +720,11 @@ const App: React.FC = () => {
           lowStockProducts={lowStockProducts.slice(0, 5)}
         />;
       case 'products':
-        return <Products products={products} onEditProduct={setProductToEdit} onAddProduct={() => setAddProductModalOpen(true)} />;
+        return <Products products={products} onEditProduct={setProductToEdit} onAddProduct={() => setAddProductModalOpen(true)} onDeleteProduct={handleDeleteProduct} />;
       case 'employees':
-        return <Employees employees={employees} onAddEmployee={() => setAddEmployeeModalOpen(true)} />;
+        return <Employees employees={employees} onAddEmployee={() => setAddEmployeeModalOpen(true)} onEditEmployee={handleEditEmployee} onDeleteEmployee={handleDeleteEmployee} />;
       case 'suppliers':
-        return <Suppliers suppliers={suppliers} onAddSupplier={() => setAddSupplierModalOpen(true)} />;
+        return <Suppliers suppliers={suppliers} onAddSupplier={() => setAddSupplierModalOpen(true)} onEditSupplier={handleEditSupplier} onDeleteSupplier={handleDeleteSupplier} />;
       case 'reports':
         return <Reports allTransactions={allTransactions} employees={employees} cashDrawerOperations={cashDrawerOperations} />;
       case 'sales-history':
@@ -843,10 +883,24 @@ const App: React.FC = () => {
             onSave={handleAddEmployee}
         />
       )}
+      {employeeToEdit && (
+        <EmployeeEditModal
+            employee={employeeToEdit}
+            onClose={() => setEmployeeToEdit(null)}
+            onSave={handleSaveEmployee}
+        />
+      )}
       {isAddSupplierModalOpen && (
         <SupplierAddModal
             onClose={() => setAddSupplierModalOpen(false)}
             onSave={handleAddSupplier}
+        />
+      )}
+      {supplierToEdit && (
+        <SupplierEditModal
+            supplier={supplierToEdit}
+            onClose={() => setSupplierToEdit(null)}
+            onSave={handleSaveSupplier}
         />
       )}
       {isSangriaModalOpen && activeOperator && (
