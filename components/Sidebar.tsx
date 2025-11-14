@@ -54,7 +54,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, lowStockCount
     ];
 
   return (
-    <div className="w-64 bg-primary-dark text-white flex flex-col flex-shrink-0">
+    <div className="w-64 bg-primary-dark text-white flex flex-col flex-shrink-0 print:hidden">
       <div className="h-16 flex items-center justify-center px-4 border-b border-gray-700">
         <h1 className="text-2xl font-bold tracking-wider">POS PRO</h1>
       </div>

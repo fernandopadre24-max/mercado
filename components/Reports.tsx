@@ -2,32 +2,104 @@ import React, { useState, useMemo } from 'react';
 import { Transaction, Employee, CashDrawerOperation } from '../types';
 import { ICONS } from '../constants';
 
+interface StatCardProps {
+  title: string;
+  value: string;
+  icon: React.ReactNode;
+  color: string;
+}
+
+const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color }) => (
+  <div className={`p-6 rounded-xl shadow-lg text-white ${color}`}>
+    <div className="flex justify-between items-start">
+      <div>
+        <p className="text-sm font-medium opacity-90">{title}</p>
+        <p className="text-3xl font-bold mt-2">{value}</p>
+      </div>
+      <div className="opacity-80">{icon}</div>
+    </div>
+  </div>
+);
+
+const ChartCard: React.FC<{ title: string; children: React.ReactNode; }> = ({ title, children }) => (
+  <div className="bg-white dark:bg-dark-card p-6 rounded-xl shadow-lg h-full flex flex-col min-h-[350px]">
+    <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4 flex-shrink-0">{title}</h3>
+    <div className="flex-grow flex items-center justify-center w-full h-full">
+      {children}
+    </div>
+  </div>
+);
+
+const TransactionRow: React.FC<{ tx: Transaction; getEmployeeName: (id: string) => string }> = ({ tx, getEmployeeName }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const formatCurrency = (value: number) => `R$ ${value.toFixed(2).replace('.', ',')}`;
+  
+  const paymentMethodPill = (method: Transaction['paymentMethod']) => {
+    const styles = {
+      'Dinheiro': 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300',
+      'PIX': 'bg-sky-100 text-sky-800 dark:bg-sky-900/50 dark:text-sky-300',
+      'Cartão': 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300',
+      'Boleto': 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300',
+    };
+    return <span className={`text-xs font-semibold px-3 py-1 rounded-full ${styles[method]}`}>{method}</span>;
+  };
+
+  const statusPill = (status: Transaction['status']) => {
+    const styles = {
+      'Pago': 'bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-300',
+      'Pendente': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300',
+    };
+    return <span className={`text-xs font-semibold px-3 py-1 rounded-full ${styles[status]}`}>{status}</span>;
+  };
+  
+  return (
+    <>
+      <tr onClick={() => setIsExpanded(!isExpanded)} className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700">
+        <td className="px-5 py-4 text-sm">
+          <p className="text-gray-900 dark:text-gray-300 whitespace-no-wrap">{tx.id}</p>
+        </td>
+        <td className="px-5 py-4 text-sm">
+          <p className="text-gray-900 dark:text-gray-300 whitespace-no-wrap">{new Date(tx.date).toLocaleString('pt-BR')}</p>
+        </td>
+        <td className="px-5 py-4 text-sm">
+          <p className="text-gray-900 dark:text-gray-300 whitespace-no-wrap">{getEmployeeName(tx.employeeId)}</p>
+        </td>
+        <td className="px-5 py-4 text-sm text-center">{paymentMethodPill(tx.paymentMethod)}</td>
+        <td className="px-5 py-4 text-sm text-center">{statusPill(tx.status)}</td>
+        <td className="px-5 py-4 text-sm text-right">
+          <p className="text-gray-900 dark:text-gray-300 whitespace-no-wrap font-semibold">{formatCurrency(tx.total)}</p>
+        </td>
+      </tr>
+      {isExpanded && (
+        <tr className="bg-gray-50 dark:bg-gray-800/50">
+          <td colSpan={6} className="p-4">
+            <div className="text-sm text-gray-700 dark:text-gray-300">
+              <h4 className="font-bold mb-2">Detalhes da Transação:</h4>
+              <ul className="list-disc pl-5 space-y-1 mb-3">
+                {tx.items.map(item => (
+                  <li key={item.productId}>{item.quantity}x {item.productName} ({formatCurrency(item.price)})</li>
+                ))}
+              </ul>
+              <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                <p><span className="font-semibold">Cliente:</span> {tx.customerName}</p>
+                {tx.cpf && <p><span className="font-semibold">CPF:</span> {tx.cpf}</p>}
+                {tx.boletoDueDate && <p><span className="font-semibold">Vencimento:</span> {new Date(tx.boletoDueDate).toLocaleDateString('pt-BR')}</p>}
+                {tx.installments && <p><span className="font-semibold">Parcelado:</span> {tx.installments.count}x de {formatCurrency(tx.installments.value)}</p>}
+              </div>
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
+  );
+};
+
+
 interface ReportsProps {
   allTransactions: Transaction[];
   employees: Employee[];
   cashDrawerOperations: CashDrawerOperation[];
 }
-
-interface StatCardProps {
-  title: string;
-  value: string;
-  subtitle: string;
-  icon: React.ReactNode;
-  color: string;
-}
-
-const StatCard: React.FC<StatCardProps> = ({ title, value, subtitle, icon, color }) => (
-  <div className={`${color} text-white p-6 rounded-xl shadow-lg flex flex-col justify-between h-40 relative`}>
-    <div>
-      <p className="text-sm font-medium opacity-90">{title}</p>
-      <p className="text-4xl font-bold mt-2">{value}</p>
-    </div>
-    <p className="text-xs opacity-80">{subtitle}</p>
-    <div className="absolute top-4 right-4 opacity-70">
-      {icon}
-    </div>
-  </div>
-);
 
 const Reports: React.FC<ReportsProps> = ({ allTransactions, employees, cashDrawerOperations }) => {
   const [startDate, setStartDate] = useState('');
@@ -37,267 +109,165 @@ const Reports: React.FC<ReportsProps> = ({ allTransactions, employees, cashDrawe
   const [reportDrawerOps, setReportDrawerOps] = useState<CashDrawerOperation[]>([]);
   const [reportGenerated, setReportGenerated] = useState(false);
 
-  const handleEmployeeSelectionChange = (employeeId: string) => {
-    setSelectedEmployeeIds(prev =>
-        prev.includes(employeeId)
-            ? prev.filter(id => id !== employeeId)
-            : [...prev, employeeId]
-    );
-  };
-  
   const formatCurrency = (value: number) => `R$ ${value.toFixed(2).replace('.', ',')}`;
 
   const handleGenerateReport = () => {
     const start = startDate ? new Date(startDate) : null;
     const end = endDate ? new Date(endDate) : null;
-
     if (start) start.setHours(0, 0, 0, 0);
     if (end) end.setHours(23, 59, 59, 999);
 
     const filteredTransactions = allTransactions.filter(tx => {
       const txDate = new Date(tx.date);
       const dateMatch = (!start || txDate >= start) && (!end || txDate <= end);
-      const employeeMatch = selectedEmployeeIds.length === 0 || (tx.employeeId && selectedEmployeeIds.includes(tx.employeeId));
+      const employeeMatch = selectedEmployeeIds.length === 0 || selectedEmployeeIds.includes(tx.employeeId);
       return dateMatch && employeeMatch;
     });
     setReportData(filteredTransactions);
 
     const filteredOps = cashDrawerOperations.filter(op => {
-        const opDate = new Date(op.date);
-        const dateMatch = (!start || opDate >= start) && (!end || opDate <= end);
-        const employeeMatch = selectedEmployeeIds.length === 0 || selectedEmployeeIds.includes(op.employeeId);
-        return dateMatch && employeeMatch;
+      const opDate = new Date(op.date);
+      const dateMatch = (!start || opDate >= start) && (!end || opDate <= end);
+      const employeeMatch = selectedEmployeeIds.length === 0 || selectedEmployeeIds.includes(op.employeeId);
+      return dateMatch && employeeMatch;
     });
     setReportDrawerOps(filteredOps);
-
     setReportGenerated(true);
   };
+  
+  const handleClearFilters = () => {
+    setStartDate('');
+    setEndDate('');
+    setSelectedEmployeeIds([]);
+    setReportGenerated(false);
+    setReportData([]);
+    setReportDrawerOps([]);
+  };
+
+  const handlePrint = () => window.print();
 
   const reportSummary = useMemo(() => {
     const totalRevenue = reportData.reduce((sum, tx) => sum + tx.total, 0);
     const paidRevenue = reportData.filter(tx => tx.status === 'Pago').reduce((sum, tx) => sum + tx.total, 0);
     const pendingRevenue = reportData.filter(tx => tx.status === 'Pendente').reduce((sum, tx) => sum + tx.total, 0);
-    const numberOfTransactions = reportData.length;
-    return { totalRevenue, paidRevenue, pendingRevenue, numberOfTransactions };
-  }, [reportData]);
-  
-  const getEmployeeName = (employeeId: string) => {
-    return employees.find(e => e.id === employeeId)?.name || 'Desconhecido';
-  };
+    const sangriaTotal = reportDrawerOps.filter(op => op.type === 'Sangria').reduce((sum, op) => sum + op.amount, 0);
+    return { totalRevenue, paidRevenue, pendingRevenue, numberOfTransactions: reportData.length, sangriaTotal };
+  }, [reportData, reportDrawerOps]);
 
-  const employeeSalesSummary = useMemo(() => {
-    if (reportData.length === 0) return [];
-    
-    const summary: { [key: string]: { totalSales: number; transactionCount: number } } = {};
+  const { dailySales, salesByPaymentMethod } = useMemo(() => {
+    const daily: { [date: string]: number } = {};
+    const payment: { [method: string]: number } = { 'Dinheiro': 0, 'PIX': 0, 'Cartão': 0, 'Boleto': 0 };
 
     reportData.forEach(tx => {
-        if (tx.employeeId) {
-            if (!summary[tx.employeeId]) {
-                summary[tx.employeeId] = { totalSales: 0, transactionCount: 0 };
-            }
-            summary[tx.employeeId].totalSales += tx.total;
-            summary[tx.employeeId].transactionCount++;
-        }
+      const dateStr = new Date(tx.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+      daily[dateStr] = (daily[dateStr] || 0) + tx.total;
+      payment[tx.paymentMethod] = (payment[tx.paymentMethod] || 0) + tx.total;
     });
 
-    return Object.entries(summary).map(([employeeId, data]) => ({
-        employeeId: employeeId,
-        employeeName: getEmployeeName(employeeId),
-        ...data,
-    })).sort((a, b) => b.totalSales - a.totalSales);
-  }, [reportData, employees]);
+    return {
+      dailySales: Object.entries(daily).map(([date, total]) => ({ date, total })),
+      salesByPaymentMethod: Object.entries(payment).map(([name, value]) => ({ name, value })),
+    };
+  }, [reportData]);
 
+  const getEmployeeName = (employeeId: string) => employees.find(e => e.id === employeeId)?.name || 'Desconhecido';
 
   return (
     <div className="p-8 bg-light-bg dark:bg-dark-bg h-full overflow-y-auto">
-      <h1 className="text-4xl font-bold text-gray-800 dark:text-gray-200 mb-8">Relatório de Vendas</h1>
-
-      <div className="bg-white dark:bg-dark-card p-6 rounded-lg shadow-md mb-8">
-         <div className="grid grid-cols-1 md:grid-cols-5 gap-6 items-start">
-            <div className="md:col-span-1">
-                <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Data de Início</label>
-                <input type="date" id="startDate" value={startDate} onChange={e => setStartDate(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 shadow-sm focus:border-primary-blue focus:ring-primary-blue sm:text-sm p-2" />
+      <div className="print:hidden">
+        <h1 className="text-4xl font-bold text-gray-800 dark:text-gray-200 mb-8">Relatórios</h1>
+        <div className="bg-white dark:bg-dark-card p-6 rounded-lg shadow-md mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+            <div>
+              <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Data de Início</label>
+              <input type="date" id="startDate" value={startDate} onChange={e => setStartDate(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 shadow-sm focus:border-primary-blue focus:ring-primary-blue sm:text-sm p-2" />
             </div>
-            <div className="md:col-span-1">
-                <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Data de Fim</label>
-                <input type="date" id="endDate" value={endDate} onChange={e => setEndDate(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 shadow-sm focus:border-primary-blue focus:ring-primary-blue sm:text-sm p-2" />
+            <div>
+              <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Data de Fim</label>
+              <input type="date" id="endDate" value={endDate} onChange={e => setEndDate(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 shadow-sm focus:border-primary-blue focus:ring-primary-blue sm:text-sm p-2" />
             </div>
-            <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Funcionários</label>
-                 <div className="mt-1 grid grid-cols-2 gap-x-4 gap-y-2 border rounded-md p-2 max-h-28 overflow-y-auto border-gray-300 dark:border-gray-600">
-                    {employees.map(employee => (
-                    <div key={employee.id} className="flex items-center">
-                        <input
-                        id={`employee-${employee.id}`}
-                        type="checkbox"
-                        checked={selectedEmployeeIds.includes(employee.id)}
-                        onChange={() => handleEmployeeSelectionChange(employee.id)}
-                        className="h-4 w-4 rounded border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-700 text-primary-blue focus:ring-primary-blue"
-                        />
-                        <label htmlFor={`employee-${employee.id}`} className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
-                        {employee.name}
-                        </label>
-                    </div>
-                    ))}
-                </div>
-                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Deixe em branco para selecionar todos.</p>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Funcionários</label>
+              <select onChange={e => setSelectedEmployeeIds(Array.from(e.target.selectedOptions, option => option.value))} multiple className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 shadow-sm focus:border-primary-blue focus:ring-primary-blue sm:text-sm p-2" size={3}>
+                {employees.map(employee => <option key={employee.id} value={employee.id}>{employee.name}</option>)}
+              </select>
             </div>
-            <div className="md:col-span-1 flex items-end h-full">
-                <button
-                    onClick={handleGenerateReport}
-                    className="bg-primary-blue text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition shadow-md w-full h-10"
-                >
-                    Gerar Relatório
-                </button>
+            <div className="flex gap-2">
+              <button onClick={handleGenerateReport} className="flex-1 bg-primary-blue text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition shadow-md">Gerar</button>
+              <button onClick={handleClearFilters} className="bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition">Limpar</button>
+              <button onClick={handlePrint} className="bg-teal-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-teal-600 transition" aria-label="Imprimir Relatório">{ICONS.barcode}</button>
             </div>
-         </div>
+          </div>
+        </div>
       </div>
       
       {reportGenerated && (
-        <>
+        <div id="report-content" className="space-y-8">
           {reportData.length > 0 || reportDrawerOps.length > 0 ? (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                  <StatCard 
-                    title="Receita Total" 
-                    value={formatCurrency(reportSummary.totalRevenue)} 
-                    subtitle="Soma das vendas no período"
-                    icon={ICONS.trendUp}
-                    color="bg-blue-500"
-                  />
-                  <StatCard 
-                    title="Receita Paga" 
-                    value={formatCurrency(reportSummary.paidRevenue)}
-                    subtitle="Total recebido no período"
-                    icon={ICONS.dollarSign}
-                    color="bg-teal-500"
-                  />
-                  <StatCard 
-                    title="Receita Pendente" 
-                    value={formatCurrency(reportSummary.pendingRevenue)}
-                    subtitle="A receber no período"
-                    icon={ICONS.hourglass}
-                    color="bg-amber-500"
-                  />
-                  <StatCard 
-                    title="Número de Transações" 
-                    value={String(reportSummary.numberOfTransactions)} 
-                    subtitle="Total de vendas no período"
-                    icon={ICONS.cart}
-                    color="bg-purple-500"
-                  />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <StatCard title="Receita Total" value={formatCurrency(reportSummary.totalRevenue)} icon={ICONS.trendUp} color="bg-blue-500" />
+                <StatCard title="Receita Paga" value={formatCurrency(reportSummary.paidRevenue)} icon={ICONS.dollarSign} color="bg-teal-500" />
+                <StatCard title="Total Retirado" value={formatCurrency(reportSummary.sangriaTotal)} icon={ICONS.chart} color="bg-orange-500" />
+                <StatCard title="Nº de Vendas" value={String(reportSummary.numberOfTransactions)} icon={ICONS.cart} color="bg-purple-500" />
               </div>
-              
-              {employeeSalesSummary.length > 0 && (
-                <div className="mb-8">
-                    <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4">Vendas por Funcionário</h2>
-                    <div className="bg-white dark:bg-dark-card shadow-md rounded-lg overflow-hidden">
-                        <table className="min-w-full leading-normal">
-                            <thead>
-                                <tr className="border-b-2 border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                                    <th className="px-5 py-3">Funcionário</th>
-                                    <th className="px-5 py-3 text-right">Transações</th>
-                                    <th className="px-5 py-3 text-right">Vendas Totais</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                                {employeeSalesSummary.map(summary => (
-                                    <tr key={summary.employeeId} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                        <td className="px-5 py-4 text-sm font-medium">{summary.employeeName}</td>
-                                        <td className="px-5 py-4 text-sm text-right">{summary.transactionCount}</td>
-                                        <td className="px-5 py-4 text-sm text-right font-semibold">{formatCurrency(summary.totalSales)}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-              )}
 
-              {reportData.length > 0 && (
-                <div>
-                    <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4">Todas as Transações</h2>
-                    <div className="bg-white dark:bg-dark-card shadow-md rounded-lg overflow-hidden">
-                        <table className="min-w-full leading-normal">
-                        <thead className="bg-gray-100 dark:bg-gray-800">
-                            <tr className="border-b-2 border-gray-200 dark:border-gray-700 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                            <th className="px-5 py-3">ID da Transação</th>
-                            <th className="px-5 py-3">Data</th>
-                            <th className="px-5 py-3">Funcionário</th>
-                            <th className="px-5 py-3 text-right">Valor Total</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                            {reportData.map((tx) => (
-                            <tr key={tx.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                <td className="px-5 py-4 text-sm">
-                                <p className="text-gray-900 dark:text-gray-300 whitespace-no-wrap">{tx.id}</p>
-                                </td>
-                                <td className="px-5 py-4 text-sm">
-                                <p className="text-gray-900 dark:text-gray-300 whitespace-no-wrap">{new Date(tx.date).toLocaleString('pt-BR')}</p>
-                                </td>
-                                <td className="px-5 py-4 text-sm">
-                                <p className="text-gray-900 dark:text-gray-300 whitespace-no-wrap">{getEmployeeName(tx.employeeId!)}</p>
-                                </td>
-                                <td className="px-5 py-4 text-sm text-right">
-                                <p className="text-gray-900 dark:text-gray-300 whitespace-no-wrap font-semibold">{formatCurrency(tx.total)}</p>
-                                </td>
-                            </tr>
-                            ))}
-                        </tbody>
-                        </table>
+              <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                <div className="lg:col-span-3">
+                  <ChartCard title="Vendas Diárias">
+                    <div className="flex justify-around items-end h-full w-full pt-4 space-x-2">
+                      {dailySales.map(day => (
+                        <div key={day.date} className="flex flex-col items-center flex-1 h-full text-center">
+                          <div className="h-full w-full flex items-end justify-center">
+                            <div className="bg-blue-400 w-4/5 rounded-t-md hover:bg-blue-500 transition-colors" style={{ height: `${(day.total / Math.max(...dailySales.map(d => d.total), 1)) * 100}%` }} title={`${day.date}: ${formatCurrency(day.total)}`}></div>
+                          </div>
+                          <span className="text-xs text-gray-500 dark:text-gray-400 mt-2 whitespace-nowrap">{day.date}</span>
+                        </div>
+                      ))}
                     </div>
+                  </ChartCard>
                 </div>
-              )}
+                <div className="lg:col-span-2">
+                  <ChartCard title="Receita por Pagamento">
+                    <div className="relative w-full h-full flex items-center justify-center">
+                      <div className="space-y-2">
+                        {salesByPaymentMethod.map(method => (
+                          <div key={method.name} className="flex items-center justify-between text-sm">
+                            <span className="flex items-center"><span className={`w-3 h-3 rounded-full mr-2 ${{'Dinheiro': 'bg-green-400', 'PIX': 'bg-sky-400', 'Cartão': 'bg-indigo-400', 'Boleto': 'bg-amber-400'}[method.name]}`}></span>{method.name}</span>
+                            <span className="font-semibold">{formatCurrency(method.value)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </ChartCard>
+                </div>
+              </div>
 
-              {reportDrawerOps.length > 0 && (
-                <div className="mt-8">
-                    <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4">Operações de Caixa</h2>
-                    <div className="bg-white dark:bg-dark-card shadow-md rounded-lg overflow-hidden">
-                        <table className="min-w-full leading-normal">
-                        <thead className="bg-gray-100 dark:bg-gray-800">
-                            <tr className="border-b-2 border-gray-200 dark:border-gray-700 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                            <th className="px-5 py-3">Data</th>
-                            <th className="px-5 py-3">Tipo</th>
-                            <th className="px-5 py-3">Funcionário</th>
-                            <th className="px-5 py-3">Motivo</th>
-                            <th className="px-5 py-3 text-right">Valor</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                            {reportDrawerOps.map((op) => (
-                            <tr key={op.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                <td className="px-5 py-4 text-sm">
-                                    <p className="text-gray-900 dark:text-gray-300 whitespace-no-wrap">{new Date(op.date).toLocaleString('pt-BR')}</p>
-                                </td>
-                                <td className="px-5 py-4 text-sm">
-                                    <p className={`whitespace-no-wrap font-semibold ${op.type === 'Sangria' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>{op.type}</p>
-                                </td>
-                                <td className="px-5 py-4 text-sm">
-                                    <p className="text-gray-900 dark:text-gray-300 whitespace-no-wrap">{op.employeeName}</p>
-                                </td>
-                                <td className="px-5 py-4 text-sm">
-                                    <p className="text-gray-900 dark:text-gray-300 whitespace-no-wrap">{op.reason || '-'}</p>
-                                </td>
-                                <td className="px-5 py-4 text-sm text-right">
-                                    <p className={`whitespace-no-wrap font-semibold ${op.type === 'Sangria' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
-                                        {formatCurrency(op.amount)}
-                                    </p>
-                                </td>
-                            </tr>
-                            ))}
-                        </tbody>
-                        </table>
-                    </div>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4">Transações Detalhadas</h2>
+                <div className="bg-white dark:bg-dark-card shadow-md rounded-lg overflow-hidden">
+                  <table className="min-w-full leading-normal">
+                    <thead className="bg-gray-100 dark:bg-gray-800">
+                      <tr className="border-b-2 border-gray-200 dark:border-gray-700 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                        <th className="px-5 py-3">ID</th>
+                        <th className="px-5 py-3">Data</th>
+                        <th className="px-5 py-3">Funcionário</th>
+                        <th className="px-5 py-3 text-center">Pagamento</th>
+                        <th className="px-5 py-3 text-center">Status</th>
+                        <th className="px-5 py-3 text-right">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>{reportData.map(tx => <TransactionRow key={tx.id} tx={tx} getEmployeeName={getEmployeeName} />)}</tbody>
+                  </table>
                 </div>
-              )}
+              </div>
             </>
           ) : (
             <div className="text-center py-10 bg-white dark:bg-dark-card rounded-lg shadow-md">
-                <p className="text-gray-500 dark:text-gray-400">Nenhum dado para o período e filtro selecionados. Por favor, ajuste os filtros e gere um novo relatório.</p>
+              <p className="text-gray-500 dark:text-gray-400">Nenhum dado para o período e filtro selecionados. Ajuste os filtros e gere um novo relatório.</p>
             </div>
           )}
-        </>
+        </div>
       )}
     </div>
   );
