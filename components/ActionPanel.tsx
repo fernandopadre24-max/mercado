@@ -11,6 +11,7 @@ interface ActionPanelProps {
     onSellInInstallments: () => void;
     onSangria: () => void;
     onSuprimento: () => void;
+    onSaveDraft: () => void;
     total: number;
     currentTime: Date;
     searchQuery: string;
@@ -30,7 +31,7 @@ const InfoBox = ({ label, value }: { label: string, value: string | number }) =>
 );
 
 const ActionPanel: React.FC<ActionPanelProps> = ({ 
-    lastScannedItem, cartItems, onClearCart, onCheckout, onFetchSuggestions, onSellOnCredit, onSellInInstallments, onSangria, onSuprimento, total, currentTime,
+    lastScannedItem, cartItems, onClearCart, onCheckout, onFetchSuggestions, onSellOnCredit, onSellInInstallments, onSangria, onSuprimento, onSaveDraft, total, currentTime,
     searchQuery, searchResults, onSearchChange, onSelectProduct, onSearchSubmit,
     activeOperator, onLogout
 }) => {
@@ -123,6 +124,12 @@ const ActionPanel: React.FC<ActionPanelProps> = ({
                 onClick={onSuprimento}
                 className="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-4 border-b-4 border-teal-700 hover:border-teal-600 rounded text-left">
                 SUPRIMENTO / REFORÇO - <span className="font-mono">F9</span>
+            </button>
+            <button
+                onClick={onSaveDraft}
+                disabled={cartItems.length === 0}
+                className="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-4 border-b-4 border-indigo-700 hover:border-indigo-600 rounded text-left disabled:bg-gray-400 disabled:border-gray-500 disabled:cursor-not-allowed">
+                SALVAR RASCUNHO - <span className="font-mono">F10</span>
             </button>
             <button
                 onClick={onFetchSuggestions}

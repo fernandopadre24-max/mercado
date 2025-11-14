@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { CartItem, Product, View, Employee, Transaction, StoreInfo, Supplier, CashDrawerOperation } from './types';
+import { CartItem, Product, View, Employee, Transaction, StoreInfo, Supplier, CashDrawerOperation, Draft } from './types';
 import Sidebar from './components/Sidebar';
 import Cart from './components/Cart';
 import PaymentModal from './components/PaymentModal';
@@ -22,6 +22,7 @@ import SupplierAddModal from './components/SupplierAddModal';
 import SangriaModal from './components/SangriaModal';
 import SuprimentoModal from './components/SuprimentoModal';
 import CashDrawerOpenModal from './components/CashDrawerOpenModal';
+import DraftsModal from './components/DraftsModal';
 import { getAISuggestions } from './services/geminiService';
 import { MOCK_PRODUCTS, MOCK_EMPLOYEES, MOCK_TRANSACTIONS } from './services/mockData';
 import { MOCK_SUPPLIERS } from './constants';
@@ -73,6 +74,13 @@ const App: React.FC = () => {
       logoUrl: '',
     };
   });
+  
+  const [drafts, setDrafts] = useState<Draft[]>(() => cache.get<Draft[]>('drafts') || []);
+  const [isDraftsModalOpen, setDraftsModalOpen] = useState(false);
+
+  useEffect(() => {
+    cache.set('drafts', drafts);
+  }, [drafts]);
 
   const lowStockProducts = useMemo(() => {
     return products.filter(p => p.stock <= p.lowStockThreshold);
@@ -502,6 +510,43 @@ const App: React.FC = () => {
     setSuprimentoModalOpen(false);
   }, [activeOperator]);
 
+  const handleSaveDraft = () => {
+    if (cartItems.length === 0 || !activeOperator) return;
+    if (window.confirm('Deseja salvar a venda atual como rascunho e limpar o carrinho?')) {
+        const newDraft: Draft = {
+            id: `draft-${Date.now()}`,
+            operatorId: activeOperator.id,
+            operatorName: activeOperator.name,
+            items: cartItems,
+            total: total,
+            date: new Date().toISOString(),
+        };
+        setDrafts(prev => [newDraft, ...prev]);
+        resetTransaction();
+        alert('Venda salva como rascunho!');
+    }
+  };
+
+  const handleLoadDraft = (draft: Draft) => {
+    if (!activeOperator || !isCashDrawerOpen) {
+        alert('Você precisa estar logado e com o caixa aberto para carregar um rascunho.');
+        return;
+    }
+    if (cartItems.length > 0 && !window.confirm('Carregar este rascunho irá substituir os itens no carrinho atual. Deseja continuar?')) {
+        return;
+    }
+    setCartItems(draft.items);
+    setDrafts(prev => prev.filter(d => d.id !== draft.id));
+    setDraftsModalOpen(false);
+    setActiveView('pos');
+  };
+
+  const handleDeleteDraft = (draftId: string) => {
+    if (window.confirm('Tem certeza que deseja excluir este rascunho?')) {
+        setDrafts(prev => prev.filter(d => d.id !== draftId));
+    }
+  };
+
   // Dashboard calculations
   const { totalRevenue, paidRevenue, pendingRevenue, totalSalesCount } = useMemo(() => {
     const totalRevenue = allTransactions.reduce((sum, tx) => sum + tx.total, 0);
@@ -654,6 +699,7 @@ const App: React.FC = () => {
                 onSellInInstallments={() => setSellInInstallmentsModalOpen(true)}
                 onSangria={() => setSangriaModalOpen(true)}
                 onSuprimento={() => setSuprimentoModalOpen(true)}
+                onSaveDraft={handleSaveDraft}
                 total={total}
                 currentTime={currentTime}
                 searchQuery={searchQuery}
@@ -689,6 +735,8 @@ const App: React.FC = () => {
         lowStockCount={lowStockProducts.length} 
         theme={theme}
         onToggleTheme={handleThemeToggle}
+        onOpenDrafts={() => setDraftsModalOpen(true)}
+        draftCount={drafts.length}
       />
       <main className="flex-1 flex flex-col overflow-hidden">
         {renderActiveView()}
@@ -762,6 +810,14 @@ const App: React.FC = () => {
           operatorName={activeOperator.name}
           onClose={() => setSuprimentoModalOpen(false)}
           onConfirm={handleConfirmSuprimento}
+        />
+      )}
+      {isDraftsModalOpen && (
+        <DraftsModal
+          drafts={drafts}
+          onLoad={handleLoadDraft}
+          onDelete={handleDeleteDraft}
+          onClose={() => setDraftsModalOpen(false)}
         />
       )}
     </div>

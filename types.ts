@@ -109,5 +109,14 @@ export interface TopSellingProduct {
   quantity: number;
 }
 
+export interface Draft {
+  id: string;
+  operatorId: string;
+  operatorName: string;
+  items: CartItem[];
+  total: number;
+  date: string;
+}
+
 
 export type View = 'home' | 'pos' | 'sales-history' | 'products' | 'employees' | 'suppliers' | 'reports' | 'settings';

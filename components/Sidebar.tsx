@@ -39,9 +39,11 @@ interface SidebarProps {
     lowStockCount: number;
     theme: string;
     onToggleTheme: () => void;
+    onOpenDrafts: () => void;
+    draftCount: number;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, lowStockCount, theme, onToggleTheme }) => {
+const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, lowStockCount, theme, onToggleTheme, onOpenDrafts, draftCount }) => {
     const navItems: {id: View, label: string, icon: React.ReactNode}[] = [
         { id: 'home', label: 'Início', icon: ICONS.home },
         { id: 'pos', label: 'PDV', icon: ICONS.cart },
@@ -70,7 +72,23 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, lowStockCount
             />
         ))}
       </nav>
-      <div className="p-4 border-t border-gray-700">
+      <div className="p-4 space-y-2 border-y border-gray-700">
+        <button
+            onClick={onOpenDrafts}
+            className="flex items-center justify-between w-full text-left px-4 py-2 text-sm font-medium rounded-md transition-colors text-gray-300 hover:bg-primary-dark-hover hover:text-white"
+        >
+            <div className="flex items-center">
+                <span className="mr-3">{ICONS.hourglass}</span>
+                Rascunhos
+            </div>
+            {draftCount > 0 && (
+                <span className="bg-amber-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                    {draftCount}
+                </span>
+            )}
+        </button>
+      </div>
+      <div className="p-4">
         <button onClick={onToggleTheme} className="flex items-center text-sm text-gray-300 hover:text-white w-full">
           <span className="mr-3">{theme === 'light' ? ICONS.moon : ICONS.sun}</span>
           {theme === 'light' ? 'Tema Escuro' : 'Tema Claro'}
