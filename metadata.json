@@ -1,0 +1,7 @@
+{
+  "name": "Supermarket POS Pro",
+  "description": "A complete and modern Point of Sale (POS) application for supermarkets, featuring cart management, barcode scanning simulation, and AI-powered product suggestions using the Gemini API.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
