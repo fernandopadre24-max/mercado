@@ -165,12 +165,19 @@ const Reports: React.FC<ReportsProps> = ({ allTransactions, employees, cashDrawe
     });
 
     return {
-      dailySales: Object.entries(daily).map(([date, total]) => ({ date, total })),
+      dailySales: Object.entries(daily).map(([date, total]) => ({ date, total })).sort((a, b) => a.date.localeCompare(b.date, 'pt-BR')),
       salesByPaymentMethod: Object.entries(payment).map(([name, value]) => ({ name, value })),
     };
   }, [reportData]);
 
   const getEmployeeName = (employeeId: string) => employees.find(e => e.id === employeeId)?.name || 'Desconhecido';
+  
+  const paymentColors: { [key: string]: string } = {
+    'Dinheiro': 'bg-green-400',
+    'PIX': 'bg-sky-400',
+    'Cartão': 'bg-indigo-400',
+    'Boleto': 'bg-amber-400',
+  };
 
   return (
     <div className="p-8 bg-light-bg dark:bg-dark-bg h-full overflow-y-auto">
@@ -180,15 +187,15 @@ const Reports: React.FC<ReportsProps> = ({ allTransactions, employees, cashDrawe
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
             <div>
               <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Data de Início</label>
-              <input type="date" id="startDate" value={startDate} onChange={e => setStartDate(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 shadow-sm focus:border-primary-blue focus:ring-primary-blue sm:text-sm p-2" />
+              <input type="date" id="startDate" value={startDate} onChange={e => setStartDate(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 shadow-sm focus:border-primary-blue focus:ring-primary-blue sm:text-sm p-2" />
             </div>
             <div>
               <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Data de Fim</label>
-              <input type="date" id="endDate" value={endDate} onChange={e => setEndDate(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 shadow-sm focus:border-primary-blue focus:ring-primary-blue sm:text-sm p-2" />
+              <input type="date" id="endDate" value={endDate} onChange={e => setEndDate(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 shadow-sm focus:border-primary-blue focus:ring-primary-blue sm:text-sm p-2" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Funcionários</label>
-              <select onChange={e => setSelectedEmployeeIds(Array.from(e.target.selectedOptions, option => option.value))} multiple className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 shadow-sm focus:border-primary-blue focus:ring-primary-blue sm:text-sm p-2" size={3}>
+              <select onChange={e => setSelectedEmployeeIds(Array.from(e.target.selectedOptions, option => option.value))} value={selectedEmployeeIds} multiple className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 shadow-sm focus:border-primary-blue focus:ring-primary-blue sm:text-sm p-2" size={3}>
                 {employees.map(employee => <option key={employee.id} value={employee.id}>{employee.name}</option>)}
               </select>
             </div>
@@ -215,26 +222,41 @@ const Reports: React.FC<ReportsProps> = ({ allTransactions, employees, cashDrawe
               <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
                 <div className="lg:col-span-3">
                   <ChartCard title="Vendas Diárias">
-                    <div className="flex justify-around items-end h-full w-full pt-4 space-x-2">
-                      {dailySales.map(day => (
-                        <div key={day.date} className="flex flex-col items-center flex-1 h-full text-center">
-                          <div className="h-full w-full flex items-end justify-center">
-                            <div className="bg-blue-400 w-4/5 rounded-t-md hover:bg-blue-500 transition-colors" style={{ height: `${(day.total / Math.max(...dailySales.map(d => d.total), 1)) * 100}%` }} title={`${day.date}: ${formatCurrency(day.total)}`}></div>
-                          </div>
-                          <span className="text-xs text-gray-500 dark:text-gray-400 mt-2 whitespace-nowrap">{day.date}</span>
+                    {dailySales.length > 0 ? (
+                        <div className="flex justify-around items-end h-full w-full pt-4 space-x-2">
+                          {dailySales.map(day => (
+                            <div key={day.date} className="flex flex-col items-center flex-1 h-full text-center">
+                              <div className="h-full w-full flex items-end justify-center">
+                                <div className="bg-blue-400 w-4/5 rounded-t-md hover:bg-blue-500 transition-colors" style={{ height: `${(day.total / Math.max(...dailySales.map(d => d.total), 1)) * 100}%` }} title={`${day.date}: ${formatCurrency(day.total)}`}></div>
+                              </div>
+                              <span className="text-xs text-gray-500 dark:text-gray-400 mt-2 whitespace-nowrap">{day.date}</span>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
+                    ) : (
+                        <p className="text-gray-500 dark:text-gray-400">Sem dados de vendas para o gráfico.</p>
+                    )}
                   </ChartCard>
                 </div>
                 <div className="lg:col-span-2">
                   <ChartCard title="Receita por Pagamento">
                     <div className="relative w-full h-full flex items-center justify-center">
-                      <div className="space-y-2">
+                      <div className="space-y-2 w-full max-w-xs">
                         {salesByPaymentMethod.map(method => (
-                          <div key={method.name} className="flex items-center justify-between text-sm">
-                            <span className="flex items-center"><span className={`w-3 h-3 rounded-full mr-2 ${{'Dinheiro': 'bg-green-400', 'PIX': 'bg-sky-400', 'Cartão': 'bg-indigo-400', 'Boleto': 'bg-amber-400'}[method.name]}`}></span>{method.name}</span>
-                            <span className="font-semibold">{formatCurrency(method.value)}</span>
+                          <div key={method.name}>
+                              <div className="flex justify-between items-center text-sm mb-1">
+                                <span className="flex items-center text-gray-600 dark:text-gray-300">
+                                  <span className={`w-3 h-3 rounded-full mr-2 ${paymentColors[method.name] || 'bg-gray-400'}`}></span>
+                                  {method.name}
+                                </span>
+                                <span className="font-semibold text-gray-800 dark:text-gray-200">{formatCurrency(method.value)}</span>
+                              </div>
+                              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                <div 
+                                    className={`${paymentColors[method.name] || 'bg-gray-400'} h-2 rounded-full`}
+                                    style={{ width: `${(method.value / Math.max(reportSummary.totalRevenue, 1)) * 100}%` }}
+                                ></div>
+                              </div>
                           </div>
                         ))}
                       </div>
