@@ -21,6 +21,7 @@ import Suppliers from './components/Suppliers';
 import SupplierAddModal from './components/SupplierAddModal';
 import SangriaModal from './components/SangriaModal';
 import SuprimentoModal from './components/SuprimentoModal';
+import CashDrawerOpenModal from './components/CashDrawerOpenModal';
 import { getAISuggestions } from './services/geminiService';
 import { MOCK_PRODUCTS, MOCK_EMPLOYEES, MOCK_TRANSACTIONS } from './services/mockData';
 import { MOCK_SUPPLIERS } from './constants';
@@ -56,6 +57,7 @@ const App: React.FC = () => {
   const [allTransactions, setAllTransactions] = useState<Transaction[]>(MOCK_TRANSACTIONS);
 
   const [activeOperator, setActiveOperator] = useState<Employee | null>(null);
+  const [isCashDrawerOpen, setCashDrawerOpen] = useState(false);
   
   const [isSangriaModalOpen, setSangriaModalOpen] = useState(false);
   const [isSuprimentoModalOpen, setSuprimentoModalOpen] = useState(false);
@@ -407,9 +409,11 @@ const App: React.FC = () => {
         if (window.confirm('A venda atual não foi finalizada e será perdida. Deseja sair mesmo assim?')) {
             resetTransaction();
             setActiveOperator(null);
+            setCashDrawerOpen(false);
         }
     } else {
         setActiveOperator(null);
+        setCashDrawerOpen(false);
     }
   };
   
@@ -422,6 +426,31 @@ const App: React.FC = () => {
         setActiveView('home');
     }
   };
+
+  const handleOpenCashDrawer = useCallback((amount: number, reason: string) => {
+    if (!activeOperator) {
+      alert('Erro: Nenhum operador logado.');
+      return;
+    }
+    if (amount < 0) {
+      alert('O valor inicial não pode ser negativo.');
+      return;
+    }
+    
+    const newOperation: CashDrawerOperation = {
+      id: `op-${Date.now()}`,
+      type: 'Suprimento',
+      amount,
+      reason: reason || 'Abertura de Caixa',
+      employeeId: activeOperator.id,
+      employeeName: activeOperator.name,
+      date: new Date().toISOString(),
+    };
+  
+    setCashDrawerOperations(prev => [newOperation, ...prev]);
+    setCashDrawerOpen(true);
+    alert(`Caixa aberto com sucesso com o valor de R$ ${amount.toFixed(2)}.`);
+  }, [activeOperator]);
 
   const handleConfirmSangria = useCallback((amount: number, reason: string) => {
     if (!activeOperator) {
@@ -592,6 +621,13 @@ const App: React.FC = () => {
       case 'pos':
         if (!activeOperator) {
             return <OperatorLoginModal employees={employees} onLogin={handleOperatorLogin} />;
+        }
+        if (!isCashDrawerOpen) {
+            return <CashDrawerOpenModal 
+                operatorName={activeOperator.name} 
+                onConfirm={handleOpenCashDrawer}
+                onCancel={handleOperatorLogout}
+            />;
         }
         return (
           <div className="flex h-full">
