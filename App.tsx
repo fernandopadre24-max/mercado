@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { CartItem, Product, View, Employee, Transaction, StoreInfo, Supplier, CashDrawerOperation, Draft } from './types';
+import { CartItem, Product, View, Employee, Transaction, StoreInfo, Supplier, CashDrawerOperation, Draft, ShoppingListItem } from './types';
 import Sidebar from './components/Sidebar';
 import Cart from './components/Cart';
 import PaymentModal from './components/PaymentModal';
@@ -23,6 +23,7 @@ import SangriaModal from './components/SangriaModal';
 import SuprimentoModal from './components/SuprimentoModal';
 import CashDrawerOpenModal from './components/CashDrawerOpenModal';
 import DraftsModal from './components/DraftsModal';
+import ShoppingList from './components/ShoppingList';
 import { getAISuggestions } from './services/geminiService';
 import { MOCK_PRODUCTS, MOCK_EMPLOYEES, MOCK_TRANSACTIONS } from './services/mockData';
 import { MOCK_SUPPLIERS } from './constants';
@@ -77,10 +78,16 @@ const App: React.FC = () => {
   
   const [drafts, setDrafts] = useState<Draft[]>(() => cache.get<Draft[]>('drafts') || []);
   const [isDraftsModalOpen, setDraftsModalOpen] = useState(false);
+  
+  const [shoppingList, setShoppingList] = useState<ShoppingListItem[]>(() => cache.get<ShoppingListItem[]>('shoppingList') || []);
 
   useEffect(() => {
     cache.set('drafts', drafts);
   }, [drafts]);
+  
+  useEffect(() => {
+    cache.set('shoppingList', shoppingList);
+  }, [shoppingList]);
 
   const lowStockProducts = useMemo(() => {
     return products.filter(p => p.stock <= p.lowStockThreshold);
@@ -547,6 +554,40 @@ const App: React.FC = () => {
     }
   };
 
+  const handleAddToShoppingList = useCallback((product: Product) => {
+    setShoppingList(prev => {
+      const exists = prev.some(item => item.productId === product.id);
+      if (exists) {
+        alert(`${product.name} já está na lista de compras.`);
+        return prev;
+      }
+      const newItem: ShoppingListItem = {
+        productId: product.id,
+        productName: product.name,
+        productBarcode: product.barcode,
+        quantityToOrder: 1,
+      };
+      return [...prev, newItem];
+    });
+  }, []);
+  
+  const handleUpdateShoppingListQuantity = useCallback((productId: string, quantity: number) => {
+    setShoppingList(prev => prev.map(item =>
+      item.productId === productId ? { ...item, quantityToOrder: quantity } : item
+    ));
+  }, []);
+  
+  const handleRemoveFromShoppingList = useCallback((productId: string) => {
+    setShoppingList(prev => prev.filter(item => item.productId !== productId));
+  }, []);
+  
+  const handleClearShoppingList = useCallback(() => {
+    if (window.confirm('Tem certeza que deseja limpar a lista de compras?')) {
+      setShoppingList([]);
+    }
+  }, []);
+
+
   // Dashboard calculations
   const { totalRevenue, paidRevenue, pendingRevenue, totalSalesCount } = useMemo(() => {
     const totalRevenue = allTransactions.reduce((sum, tx) => sum + tx.total, 0);
@@ -662,6 +703,16 @@ const App: React.FC = () => {
           onStoreInfoChange={handleStoreInfoChange}
           theme={theme}
           onThemeChange={setTheme}
+        />;
+      case 'shopping-list':
+        return <ShoppingList
+          products={products}
+          lowStockProducts={lowStockProducts}
+          shoppingList={shoppingList}
+          onAddItem={handleAddToShoppingList}
+          onUpdateItem={handleUpdateShoppingListQuantity}
+          onRemoveItem={handleRemoveFromShoppingList}
+          onClearList={handleClearShoppingList}
         />;
       case 'pos':
         if (!activeOperator) {

@@ -49,6 +49,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, lowStockCount
         { id: 'pos', label: 'PDV', icon: ICONS.cart },
         { id: 'sales-history', label: 'Vendas', icon: ICONS.dollarSign },
         { id: 'products', label: 'Produtos', icon: ICONS.package },
+        { id: 'shopping-list', label: 'Lista de Compras', icon: ICONS.clipboard },
         { id: 'employees', label: 'Funcionários', icon: ICONS.user },
         { id: 'suppliers', label: 'Fornecedores', icon: ICONS.truck },
         { id: 'reports', label: 'Relatórios', icon: ICONS.chart },

@@ -118,5 +118,12 @@ export interface Draft {
   date: string;
 }
 
+export interface ShoppingListItem {
+  productId: string;
+  productName: string;
+  productBarcode: string;
+  quantityToOrder: number;
+}
 
-export type View = 'home' | 'pos' | 'sales-history' | 'products' | 'employees' | 'suppliers' | 'reports' | 'settings';
+
+export type View = 'home' | 'pos' | 'sales-history' | 'products' | 'employees' | 'suppliers' | 'reports' | 'settings' | 'shopping-list';
